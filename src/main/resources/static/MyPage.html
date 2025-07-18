@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>내 정보</title>
+</head>
+<body>
+<h2>내 정보</h2>
+<div>
+    아이디: <span id="username"></span><br>
+    이메일: <input id="email"><br>
+    비밀번호 변경: <input id="password"><br>
+    <button onclick="update()">정보 수정</button>
+</div>
+
+<script>
+    function getToken() {
+        return localStorage.getItem('jwt');
+    }
+
+    function authHeader() {
+        return {
+            'Authorization': 'Bearer ' + getToken(),
+            'Content-Type': 'application/json'
+        };
+    }
+
+    async function loadMyInfo() {
+        const res = await fetch('/api/users/me', {
+            headers: authHeader()
+        });
+
+        const data = await res.json();
+        document.getElementById('username').textContent = data.username;
+        document.getElementById('email').value = data.email;
+    }
+
+    async function update() {
+        const data = {
+            password: document.getElementById('password').value,
+            email: document.getElementById('email').value
+        };
+
+        const res = await fetch('/api/users/me', {
+            method: 'PUT',
+            headers: authHeader(),
+            body: JSON.stringify(data)
+        });
+
+        alert(await res.text());
+    }
+
+    loadMyInfo();
+</script>
+</body>
+</html>

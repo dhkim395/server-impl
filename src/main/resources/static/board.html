@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>게시판</title>
+    <script src="token.js"></script>
+</head>
+<body>
+<h2>📋 게시판</h2>
+
+<!-- 글 작성 -->
+<div>
+    <input id="title" placeholder="제목"><br>
+    <textarea id="content" placeholder="내용"></textarea><br>
+    <button onclick="createBoard()">글 작성</button>
+</div>
+<hr>
+
+<!-- 글 목록 -->
+<div id="boardList"></div>
+
+<!-- 상세 보기 -->
+<div id="detailBox" style="display:none">
+    <h3 id="detailTitle"></h3>
+    <p id="detailContent"></p>
+    <p>작성자: <span id="detailWriter"></span></p>
+    <button onclick="editBoard()">✏ 수정</button>
+    <button onclick="deleteBoard()">🗑 삭제</button>
+    <hr>
+    <div id="editForm" style="display:none">
+        <input id="editTitle"><br>
+        <textarea id="editContent"></textarea><br>
+        <button onclick="saveEdit()">수정 완료</button>
+    </div>
+</div>
+
+<script>
+    let selectedId = null;
+
+    // 글 목록
+    async function loadBoards() {
+        const res = await fetch("/api/boards");
+        const json = await res.json();
+
+        const listDiv = document.getElementById("boardList");
+        listDiv.innerHTML = "";
+
+        json.boards.forEach(post => {
+            const div = document.createElement("div");
+            div.innerHTML = `<b onclick="loadDetail(${post.id})">${post.title}</b> | ${post.writer}`;
+            listDiv.appendChild(div);
+        });
+    }
+
+    // 글 작성
+    async function createBoard() {
+        const title = document.getElementById("title").value;
+        const content = document.getElementById("content").value;
+
+        const res = await fetch("/api/boards", {
+            method: "POST",
+            headers: authHeader(),
+            body: JSON.stringify({ title, content })
+        });
+
+        alert(await res.text());
+        loadBoards();
+    }
+
+    // 상세 보기
+    async function loadDetail(id) {
+        selectedId = id;
+        const res = await fetch(`/api/boards/${id}`);
+        const data = await res.json();
+
+        document.getElementById("detailBox").style.display = "block";
+        document.getElementById("detailTitle").innerText = data.title;
+        document.getElementById("detailContent").innerText = data.content;
+        document.getElementById("detailWriter").innerText = data.writer;
+
+        document.getElementById("editForm").style.display = "none";
+    }
+
+    // 수정 폼 열기
+    function editBoard() {
+        document.getElementById("editForm").style.display = "block";
+        document.getElementById("editTitle").value = document.getElementById("detailTitle").innerText;
+        document.getElementById("editContent").value = document.getElementById("detailContent").innerText;
+    }
+
+    // 수정 저장
+    async function saveEdit() {
+        const title = document.getElementById("editTitle").value;
+        const content = document.getElementById("editContent").value;
+
+        const res = await fetch(`/api/boards/${selectedId}`, {
+            method: "PUT",
+            headers: authHeader(),
+            body: JSON.stringify({ title, content })
+        });
+
+        alert(await res.text());
+        loadBoards();
+    }
+
+    // 삭제
+    async function deleteBoard() {
+        const res = await fetch(`/api/boards/${selectedId}`, {
+            method: "DELETE",
+            headers: authHeader()
+        });
+
+        alert(await res.text());
+        loadBoards();
+        document.getElementById("detailBox").style.display = "none";
+    }
+
+    loadBoards();
+</script>
+</body>
+</html>
